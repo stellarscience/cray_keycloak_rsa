@@ -2,10 +2,10 @@ package org.rsa.cli_authenticator;
 
 import org.jboss.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonArray;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonReader;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.HttpURLConnection;

@@ -1,11 +1,11 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
 import org.jboss.logging.Logger;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonArray;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonReader;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -16,7 +16,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
-import static org.rsa.authenticator.Const.*;
+import static org.keycloak_rsa.authenticator.Const.*;
 
 class Endpoint {
 

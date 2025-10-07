@@ -11,11 +11,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.events.Errors;
 import org.keycloak.services.ErrorResponse;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.*;
 
 import static org.rsa.cli_authenticator.Const.*;

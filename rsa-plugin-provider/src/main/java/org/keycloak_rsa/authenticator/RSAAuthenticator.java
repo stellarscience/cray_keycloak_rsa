@@ -1,4 +1,4 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -9,14 +9,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.*;
 
-import static org.rsa.authenticator.Const.*;
+import static org.keycloak_rsa.authenticator.Const.*;
 
 
 public class RSAAuthenticator implements org.keycloak.authentication.Authenticator {

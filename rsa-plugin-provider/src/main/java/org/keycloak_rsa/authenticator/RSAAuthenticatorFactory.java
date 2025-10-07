@@ -1,4 +1,4 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
 import org.keycloak.Config;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -9,7 +9,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.rsa.authenticator.Const.*;
+import static org.keycloak_rsa.authenticator.Const.*;
 
 /**
  * Copyright 2019 NetKnights GmbH - micha.preusser@netknights.it

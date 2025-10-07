@@ -22,7 +22,7 @@
                     <div>
                         ${otpMessage}
                     </div>
-                    <input id="rsa_otp" name="rsa_otp" type="visible" class="${properties.kcInputClass!}" autofocus/>
+                    <input id="rsa_otp" name="rsa_otp" type="password" class="${properties.kcInputClass!}" autofocus/>
                 </div>
             </div>
             <div class="${properties.kcFormGroupClass!}">

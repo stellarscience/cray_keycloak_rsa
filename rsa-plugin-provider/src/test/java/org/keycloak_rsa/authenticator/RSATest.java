@@ -1,15 +1,15 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
-import javax.json.Json;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.ArrayList;
-import org.rsa.authenticator.Endpoint;
-import org.rsa.authenticator.Configuration;
+import org.keycloak_rsa.authenticator.Endpoint;
+import org.keycloak_rsa.authenticator.Configuration;
 
-import static org.rsa.authenticator.Const.*;
+import static org.keycloak_rsa.authenticator.Const.*;
 
 public class RSATest {
 

@@ -1,0 +1,18 @@
+<project>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.stellarscience</groupId>
+  <artifactId>rsa-plugin-parent-project</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>rsa-plugin-cli</module>
+    <module>rsa-plugin-provider</module>
+  </modules>
+
+  <!-- Common configurations, dependencies, or plugins can be defined here -->
+  <properties>
+    <keycloak.version>26.4.0</keycloak.version>
+  </properties>
+
+</project>

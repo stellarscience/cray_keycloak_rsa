@@ -1,11 +1,11 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.rsa.authenticator.Const.*;
+import static org.keycloak_rsa.authenticator.Const.*;
 
 class Configuration {
 

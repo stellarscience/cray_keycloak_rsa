@@ -1,4 +1,4 @@
-package org.rsa.authenticator;
+package org.keycloak_rsa.authenticator;
 
 import java.util.Arrays;
 import java.util.List;

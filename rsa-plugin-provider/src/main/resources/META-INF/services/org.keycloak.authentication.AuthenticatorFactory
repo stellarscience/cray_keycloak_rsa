@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.rsa.authenticator.RSAAuthenticatorFactory
+org.keycloak_rsa.authenticator.RSAAuthenticatorFactory
