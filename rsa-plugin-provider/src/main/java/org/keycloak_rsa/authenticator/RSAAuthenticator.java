@@ -4,54 +4,41 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.forms.login.LoginFormsProvider;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import jakarta.json.Json;
-import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.util.*;
 
 import static org.keycloak_rsa.authenticator.Const.*;
 
-
+/**
+ * Keycloak does not persist Authenticator instances between calling {@link #authenticate(AuthenticationFlowContext)}
+ * and {@link #action(AuthenticationFlowContext)}, and the provided context object is also different between the two
+ * calls.
+ */
 public class RSAAuthenticator implements org.keycloak.authentication.Authenticator {
 
-    private static Logger _log = Logger.getLogger(RSAAuthenticator.class);
-
-    private String _currentUserName;
-    private Boolean _sharedUsername;
-    private Configuration _config;
-    private Endpoint _endpoint;
-
+    private static final Logger sLogger = Logger.getLogger(RSAAuthenticator.class);
 
     @Override
-    public void authenticate(AuthenticationFlowContext context) {
-        /**
-         *  Enable the empty constructor to use environment variables 
-         *  _config = new Configuration();
+    public void authenticate(final AuthenticationFlowContext context) {
+        /*
+         *  Enable the empty constructor to use environment variables
+         *  configuration = new Configuration();
          */
-        _config = new Configuration(context.getAuthenticatorConfig().getConfig());
-        _endpoint = new Endpoint(_config);
+        final Configuration configuration = new Configuration(context.getAuthenticatorConfig().getConfig());
+        final Boolean isSharedUsername = configuration.getSharedUsername();
 
-        UserModel user = context.getUser();
-        _currentUserName = user.getUsername();
-        _sharedUsername = _config.getSharedUsername();
-
-        int tokenCounter = 0;
-        // Collect the messages for the tokens to display
-        List<String> otpMessages = new ArrayList<>();
-    
         // Create login form
-        Response challenge = context.form()
-                .setAttribute(FORM_OTP_MESSAGE, DEFAULT_OTP_MESSAGE)
-                .setAttribute(FORM_USERNAME_MESSAGE, DEFAULT_USERNAME_MESSAGE)
-                .setAttribute(FORM_SHARED_USERNAME, _sharedUsername.toString())
-                .createForm(FORM_FILE_NAME);
+        final Response challenge = context.form()
+            .setAttribute(FORM_OTP_MESSAGE, DEFAULT_OTP_MESSAGE)
+            .setAttribute(FORM_USERNAME_MESSAGE, DEFAULT_USERNAME_MESSAGE)
+            .setAttribute(FORM_SHARED_USERNAME, isSharedUsername.toString())
+            .createForm(FORM_FILE_NAME);
         context.challenge(challenge);
     }
 
@@ -61,56 +48,63 @@ public class RSAAuthenticator implements org.keycloak.authentication.Authenticat
      * @param context AuthenticationFlowContext
      */
     @Override
-    public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+    public void action(final AuthenticationFlowContext context) {
+        final MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         if (formData.containsKey("cancel")) {
             context.resetFlow();
             return;
         }
 
+        final Configuration config = new Configuration(context.getAuthenticatorConfig().getConfig());
+        final Endpoint endpoint = new Endpoint(config);
+        final Boolean sharedUsername = config.getSharedUsername();
+
         // Get data from form
-        String otpMessage = formData.getFirst(FORM_OTP_MESSAGE);
-        String otp = formData.getFirst(FORM_RSA_OTP);
-        String rsaUsername = formData.getFirst(FORM_RSA_USERNAME);
-         
-        if (!_sharedUsername) {
-            _currentUserName = rsaUsername;
+        final String otp = formData.getFirst(FORM_RSA_OTP);
+        final String rsaUsername = formData.getFirst(FORM_RSA_USERNAME);
+
+        final String currentUserName;
+        if (!sharedUsername) {
+            currentUserName = rsaUsername;
+        } else {
+            final UserModel user = context.getUser();
+            currentUserName = user.getUsername();
         }
 
-        if(otp == null || otp.isEmpty()) {
-            JsonObject error =  Json.createObjectBuilder()
-                      .add("error", "missing_parameter")
-                      .add("error_description", "Missing parameter: rsa_token")
-                      .build();
-            Response challengeResponse = Response
-                                .status(Response.Status.UNAUTHORIZED)
-                                .entity(error)
-                                .build();
+        if (otp == null || otp.isEmpty()) {
+            final JsonObject error = Json.createObjectBuilder()
+                .add("error", "missing_parameter")
+                .add("error_description", "Missing parameter: rsa_token")
+                .build();
+            final Response challengeResponse = Response
+                .status(Response.Status.UNAUTHORIZED)
+                .entity(error)
+                .build();
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
-        if(_currentUserName == null || _currentUserName.isEmpty()) {
-            JsonObject error =  Json.createObjectBuilder()
-                      .add("error", "missing_parameter")
-                      .add("error_description", "Missing parameter: username")
-                      .build();
-            Response challengeResponse = Response
-                                .status(Response.Status.UNAUTHORIZED)
-                                .entity(error)
-                                .build();
+        if (currentUserName == null || currentUserName.isEmpty()) {
+            final JsonObject error = Json.createObjectBuilder()
+                .add("error", "missing_parameter")
+                .add("error_description", "Missing parameter: username")
+                .build();
+            final Response challengeResponse = Response
+                .status(Response.Status.UNAUTHORIZED)
+                .entity(error)
+                .build();
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
 
-        if (!validateResponse(context, otp)) {
-            LoginFormsProvider form = context.form()
-                            .setAttribute(FORM_OTP_MESSAGE, DEFAULT_OTP_MESSAGE)
-                            .setAttribute(FORM_USERNAME_MESSAGE, DEFAULT_USERNAME_MESSAGE)
-                            .setAttribute(FORM_SHARED_USERNAME, _sharedUsername.toString());
+        if (!validateResponse(config, endpoint, currentUserName, otp)) {
+            final LoginFormsProvider form = context.form()
+                .setAttribute(FORM_OTP_MESSAGE, DEFAULT_OTP_MESSAGE)
+                .setAttribute(FORM_USERNAME_MESSAGE, DEFAULT_USERNAME_MESSAGE)
+                .setAttribute(FORM_SHARED_USERNAME, sharedUsername.toString());
             form.setError("Authentication failed.");
-            
-            Response challenge = form.createForm(FORM_FILE_NAME);
+
+            final Response challenge = form.createForm(FORM_FILE_NAME);
             context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challenge);
             return;
         }
@@ -120,54 +114,56 @@ public class RSAAuthenticator implements org.keycloak.authentication.Authenticat
     /**
      * Check if authentication is successful
      *
-     * @param context AuthenticationFlowContext
      * @return true if authentication was successful, else false
      */
-    private boolean validateResponse(AuthenticationFlowContext context, String otp) {
+    private boolean validateResponse(
+        final Configuration config,
+        final Endpoint endpoint,
+        final String user,
+        final String otp) {
 
-        String verifyEndpoint = _config.getVerifyEndpoint();
-        JsonObject params = buildPayload(otp);
-        JsonObject body = _endpoint.sendRequest(verifyEndpoint, params, POST);
+        final String verifyEndpoint = config.getVerifyEndpoint();
+        final JsonObject params = buildPayload(config, user, otp);
+        final JsonObject body = endpoint.sendRequest(verifyEndpoint, params, POST);
         try {
-            String result = body.getString(RSA_ATTEMPT_RESPONSE);
+            final String result = body.getString(RSA_ATTEMPT_RESPONSE);
 
             if (result.equals(SUCCESS)) {
-                return  true;
+                return true;
             }
-        } catch (Exception e) {
-            _log.error("RSA tokencode verification failed.");
+        } catch (final Exception e) {
+            sLogger.error("RSA tokencode verification failed.");
         }
         return false;
     }
 
-    private JsonObject buildPayload(String otp) {
-
-	    JsonObject body = Json.createObjectBuilder()
-                      .add(KEY_CLIENT_ID, _config.getClientId())
-                      .add(SUBJECT_NAME, _currentUserName)
-                      .add(SUBJECT_CREDENTIALS, Json.createArrayBuilder()
-                                              		.add(Json.createObjectBuilder()
-                                                      .add(METHOD_ID, METHOD)
-                                                      .add(COLLECTED_INPUTS, Json.createArrayBuilder()
-                                                    		  .add(Json.createObjectBuilder()
-                                                                  .add(NAME, METHOD)
-                                                                  .add(VALUE, otp)
-                                                    			)
-                                                      )
-                                                  )
-                      )
-                      .add(CONTEXT, Json.createObjectBuilder()
-                                  	.add(AUTH_ATTEMPT_ID_DESC, AUTH_ATTEMPT_ID)
-                                  	.add(MESSAGE_ID_DESC, getMessageId())
-                                  	.add(IN_RESPONSE_TO_DESC, IN_RESPONSE_TO)
-                      ).build();
-
-
-        return body;
+    private JsonObject buildPayload(final Configuration config, final String user, final String otp) {
+        return Json.createObjectBuilder()
+            .add(KEY_CLIENT_ID, config.getClientId())
+            .add(SUBJECT_NAME, user)
+            .add(
+                SUBJECT_CREDENTIALS,
+                Json.createArrayBuilder()
+                    .add(
+                        Json.createObjectBuilder()
+                            .add(METHOD_ID, METHOD)
+                            .add(
+                                COLLECTED_INPUTS,
+                                Json.createArrayBuilder()
+                                    .add(Json.createObjectBuilder()
+                                        .add(NAME, METHOD)
+                                        .add(VALUE, otp)))))
+            .add(
+                CONTEXT,
+                Json.createObjectBuilder()
+                    .add(AUTH_ATTEMPT_ID_DESC, AUTH_ATTEMPT_ID)
+                    .add(MESSAGE_ID_DESC, getMessageId())
+                    .add(IN_RESPONSE_TO_DESC, IN_RESPONSE_TO))
+            .build();
     }
 
-    private String getMessageId() {
-        return "test";
+    private static String getMessageId() {
+        return RSAAuthenticator.class.getSimpleName();
     }
 
     @Override
@@ -176,12 +172,12 @@ public class RSAAuthenticator implements org.keycloak.authentication.Authenticat
     }
 
     @Override
-    public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
+    public boolean configuredFor(final KeycloakSession session, final RealmModel realm, final UserModel user) {
         return true;
     }
 
     @Override
-    public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
+    public void setRequiredActions(final KeycloakSession session, final RealmModel realm, final UserModel user) {
     }
 
     @Override

@@ -35,7 +35,6 @@ import static org.rsa.cli_authenticator.Const.*;
  */
 public class RSACLIAuthenticatorFactory implements org.keycloak.authentication.AuthenticatorFactory {
 
-    private static final RSACLIAuthenticator SINGLETON = new RSACLIAuthenticator();
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     @Override
@@ -45,7 +44,7 @@ public class RSACLIAuthenticatorFactory implements org.keycloak.authentication.A
 
     @Override
     public org.keycloak.authentication.Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return new RSACLIAuthenticator();
     }
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
